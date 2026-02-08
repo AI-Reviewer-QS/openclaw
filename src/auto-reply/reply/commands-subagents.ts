@@ -81,10 +81,28 @@ function truncateLine(value: string, maxLength: number) {
   return `${value.slice(0, maxLength).trimEnd()}...`;
 }
 
-function resolveModelDisplay(entry?: { model?: unknown; modelProvider?: unknown }) {
+function resolveModelDisplay(entry?: {
+  model?: unknown;
+  modelProvider?: unknown;
+  modelOverride?: unknown;
+  providerOverride?: unknown;
+}) {
   const model = typeof entry?.model === "string" ? entry.model.trim() : "";
   const provider = typeof entry?.modelProvider === "string" ? entry.modelProvider.trim() : "";
-  const combined = model.includes("/") ? model : model && provider ? `${provider}/${model}` : model;
+  let combined = model.includes("/") ? model : model && provider ? `${provider}/${model}` : model;
+  if (!combined) {
+    // Fall back to override fields which are populated at spawn time,
+    // before the first run completes and writes model/modelProvider.
+    const overrideModel =
+      typeof entry?.modelOverride === "string" ? entry.modelOverride.trim() : "";
+    const overrideProvider =
+      typeof entry?.providerOverride === "string" ? entry.providerOverride.trim() : "";
+    combined = overrideModel.includes("/")
+      ? overrideModel
+      : overrideModel && overrideProvider
+        ? `${overrideProvider}/${overrideModel}`
+        : overrideModel;
+  }
   if (!combined) {
     return "model n/a";
   }

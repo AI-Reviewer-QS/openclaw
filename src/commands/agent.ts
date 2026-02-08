@@ -382,12 +382,21 @@ export async function agentCommand(
         opts.replyChannel ?? opts.channel,
       );
       const spawnedBy = opts.spawnedBy ?? sessionEntry?.spawnedBy;
+      // When a session has an explicit model override, prevent the fallback logic
+      // from silently appending the global primary model as a backstop.  Passing an
+      // empty array (instead of undefined) tells resolveFallbackCandidates to skip
+      // the implicit primary append, so the session stays on its overridden model.
+      const agentFallbacksOverride = resolveAgentModelFallbacksOverride(cfg, sessionAgentId);
+      const effectiveFallbacksOverride = storedModelOverride
+        ? (agentFallbacksOverride ?? [])
+        : agentFallbacksOverride;
+
       const fallbackResult = await runWithModelFallback({
         cfg,
         provider,
         model,
         agentDir,
-        fallbacksOverride: resolveAgentModelFallbacksOverride(cfg, sessionAgentId),
+        fallbacksOverride: effectiveFallbacksOverride,
         run: (providerOverride, modelOverride) => {
           if (isCliProvider(providerOverride, cfg)) {
             const cliSessionId = getCliSessionId(sessionEntry, providerOverride);

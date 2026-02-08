@@ -19,6 +19,7 @@ import {
   resolveConfiguredModelRef,
   resolveModelRefFromString,
 } from "./model-selection.js";
+import { isLikelyContextOverflowError } from "./pi-embedded-helpers.js";
 
 type ModelCandidate = {
   provider: string;
@@ -270,6 +271,14 @@ export async function runWithModelFallback<T>(params: {
       };
     } catch (err) {
       if (shouldRethrowAbort(err)) {
+        throw err;
+      }
+      // Context overflow errors should be handled by the inner runner's
+      // compaction/retry logic, not by model fallback.  If one escapes as a
+      // throw, rethrow it immediately rather than trying a different model
+      // that may have a smaller context window and fail worse.
+      const errMessage = err instanceof Error ? err.message : String(err);
+      if (isLikelyContextOverflowError(errMessage)) {
         throw err;
       }
       const normalized =

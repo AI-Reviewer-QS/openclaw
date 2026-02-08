@@ -135,7 +135,24 @@ function resolveModelRef(entry?: SessionEntry) {
   if (model) {
     return model;
   }
-  return provider || undefined;
+  if (provider) {
+    return provider;
+  }
+  // Fall back to override fields which are populated at spawn time,
+  // before the first run completes and writes model/modelProvider.
+  const overrideModel = typeof entry?.modelOverride === "string" ? entry.modelOverride.trim() : "";
+  const overrideProvider =
+    typeof entry?.providerOverride === "string" ? entry.providerOverride.trim() : "";
+  if (overrideModel.includes("/")) {
+    return overrideModel;
+  }
+  if (overrideModel && overrideProvider) {
+    return `${overrideProvider}/${overrideModel}`;
+  }
+  if (overrideModel) {
+    return overrideModel;
+  }
+  return overrideProvider || undefined;
 }
 
 function resolveModelDisplay(entry?: SessionEntry) {
