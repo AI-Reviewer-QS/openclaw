@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  isPrivateIpAddress,
   createPinnedLookup,
   resolvePinnedHostname,
   resolvePinnedHostnameWithPolicy,
@@ -103,3 +104,26 @@ describe("ssrf pinning", () => {
     ).rejects.toThrow(/allowlist/i);
   });
 });
+
+describe("isPrivateIpAddress", () => {
+  it("returns false for invalid IPv4 addresses with octets > 255", () => {
+    // Invalid IPs are not internal addresses and should not be treated as private
+    expect(isPrivateIpAddress("999.999.999.999")).toBe(false);
+    expect(isPrivateIpAddress("256.0.0.1")).toBe(false);
+    expect(isPrivateIpAddress("300.300.300.300")).toBe(false);
+  });
+
+  it("returns true for known private IPv4 ranges", () => {
+    expect(isPrivateIpAddress("10.0.0.1")).toBe(true);
+    expect(isPrivateIpAddress("172.16.0.1")).toBe(true);
+    expect(isPrivateIpAddress("192.168.1.1")).toBe(true);
+    expect(isPrivateIpAddress("127.0.0.1")).toBe(true);
+    expect(isPrivateIpAddress("169.254.169.254")).toBe(true);
+  });
+
+  it("returns false for public IPv4 addresses", () => {
+    expect(isPrivateIpAddress("8.8.8.8")).toBe(false);
+    expect(isPrivateIpAddress("93.184.216.34")).toBe(false);
+  });
+});
+
