@@ -23,4 +23,30 @@ describe("extractLinksFromMessage", () => {
     const links = extractLinksFromMessage("http://127.0.0.1/test https://ok.test");
     expect(links).toEqual(["https://ok.test"]);
   });
+
+  it("blocks localhost and common loopback addresses", () => {
+    expect(extractLinksFromMessage("http://localhost/secret")).toEqual([]);
+    expect(extractLinksFromMessage("http://0.0.0.0/secret")).toEqual([]);
+    expect(extractLinksFromMessage("http://[::1]/secret")).toEqual([]);
+  });
+
+  it("blocks private network ranges", () => {
+    expect(extractLinksFromMessage("http://10.0.0.1/internal")).toEqual([]);
+    expect(extractLinksFromMessage("http://172.16.0.1/internal")).toEqual([]);
+    expect(extractLinksFromMessage("http://192.168.1.1/internal")).toEqual([]);
+  });
+
+  it("blocks link-local and cloud metadata addresses", () => {
+    expect(extractLinksFromMessage("http://169.254.169.254/latest/meta-data/")).toEqual([]);
+    expect(extractLinksFromMessage("http://169.254.1.1/test")).toEqual([]);
+  });
+
+  it("blocks CGNAT range used by Tailscale", () => {
+    expect(extractLinksFromMessage("http://100.100.50.1/test")).toEqual([]);
+  });
+
+  it("allows legitimate public URLs", () => {
+    expect(extractLinksFromMessage("https://example.com/page")).toEqual(["https://example.com/page"]);
+    expect(extractLinksFromMessage("https://8.8.8.8/dns")).toEqual(["https://8.8.8.8/dns"]);
+  });
 });
