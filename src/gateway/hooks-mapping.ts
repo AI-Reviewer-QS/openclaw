@@ -103,6 +103,7 @@ type HookTransformFn = (
 ) => HookTransformResult | Promise<HookTransformResult>;
 
 export function resolveHookMappings(hooks?: HooksConfig): HookMappingResolved[] {
+  transformCache.clear();
   const presets = hooks?.presets ?? [];
   const gmailAllowUnsafe = hooks?.gmail?.allowUnsafeExternalContent;
   const mappings: HookMappingConfig[] = [];
@@ -323,7 +324,7 @@ async function loadTransform(transform: HookMappingTransformResolved): Promise<H
   if (cached) {
     return cached;
   }
-  const url = pathToFileURL(transform.modulePath).href;
+  const url = pathToFileURL(transform.modulePath).href + `?t=${Date.now()}`;
   const mod = (await import(url)) as Record<string, unknown>;
   const fn = resolveTransformFn(mod, transform.exportName);
   transformCache.set(transform.modulePath, fn);
