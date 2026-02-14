@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { beforeEach, describe, expect, test, vi } from "vitest";
+import type { createSubsystemLogger } from "../logging/subsystem.js";
 import type { HooksConfigResolved } from "./hooks.js";
 
 const { readJsonBodyMock } = vi.hoisted(() => ({
@@ -80,7 +81,7 @@ describe("createHooksRequestHandler timeout status mapping", () => {
         debug: vi.fn(),
         info: vi.fn(),
         error: vi.fn(),
-      } as any,
+      } as unknown as ReturnType<typeof createSubsystemLogger>,
       dispatchWakeHook,
       dispatchAgentHook,
     });
